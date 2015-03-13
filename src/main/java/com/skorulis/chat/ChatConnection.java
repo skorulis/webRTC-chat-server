@@ -25,5 +25,10 @@ public class ChatConnection {
         waitingCandidates = new ArrayList<>();
     }
     
+    public void clear() {
+        waitingCandidates.clear();
+        sdp = null;
+        chattingWith = null;
+    }
     
 }

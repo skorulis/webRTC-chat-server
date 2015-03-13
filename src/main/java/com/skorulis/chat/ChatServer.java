@@ -94,6 +94,14 @@ public class ChatServer extends WebSocketServer {
         }
     }
     
+    private void handleDisconnect(ChatConnection conn) {
+        if(conn.chattingWith != null) {
+            sendMessage(new ChatControlMessage(ChatControlMessage.CCT_CHAT_DISCONNECT), conn.chattingWith);
+            conn.chattingWith.clear();
+        }
+        conn.clear();
+    }
+    
     private void sendMessage(ChatControlMessage message, ChatConnection conn) {
         String json = gson.toJson(message);
         conn.socket.send(json);
@@ -136,6 +144,8 @@ public class ChatServer extends WebSocketServer {
             } else if(control.isIceCandidate()) {
                 ICECandidateModel ice = gson.fromJson(control.payload, ICECandidateModel.class);
                 handleIceCandidate(conn,ice);
+            } else if(control.isDisconnect()) {
+                handleDisconnect(conn);
             }
             System.out.println("Got control " + control.type);
         } catch(JsonSyntaxException ex) {
