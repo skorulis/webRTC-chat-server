@@ -48,6 +48,10 @@ public class ChatServer extends WebSocketServer {
         return null;
     }
     
+    private void handleICECandidate(ChatConnection conn) {
+        
+    }
+    
     private void handleChatRequest(ChatConnection conn) {
         ChatConnection other = findOffer();
         ChatControlMessage message = new ChatControlMessage();
@@ -57,6 +61,12 @@ public class ChatServer extends WebSocketServer {
             message.payload = gson.toJson(other.sdp);
             other.chattingWith = conn;
             conn.chattingWith = other;
+            for(ICECandidateModel ice : other.waitingCandidates) {
+                ChatControlMessage iceMessage = new ChatControlMessage();
+                iceMessage.type = ChatControlMessage.CCT_ICE_CANDIDATE;
+                iceMessage.payload = gson.toJson(ice);
+                sendMessage(iceMessage, conn);
+            }
         } else {
             message.type = ChatControlMessage.CCT_CHAT_INIT;
             
@@ -65,12 +75,27 @@ public class ChatServer extends WebSocketServer {
     }
     
     private void handleChatAnswer(ChatConnection conn, SDPModel answer) {
-        System.out.println("Got chat answer");
+        conn.sdp = answer;
+        ChatControlMessage message = new ChatControlMessage();
+        message.type = ChatControlMessage.CCT_CHAT_ANSWER;
+        message.payload = gson.toJson(answer);
+        sendMessage(message, conn.chattingWith);
     }
     
     private void handleChatOffer(ChatConnection conn, SDPModel offer) {
         conn.sdp = offer;
         offers.add(conn);
+    }
+    
+    private void handleIceCandidate(ChatConnection conn, ICECandidateModel ice)  {
+        if(conn.chattingWith != null) {
+            ChatControlMessage message = new ChatControlMessage();
+            message.type = ChatControlMessage.CCT_ICE_CANDIDATE;
+            message.payload = gson.toJson(ice);
+            sendMessage(message, conn.chattingWith);
+        } else {
+            conn.waitingCandidates.add(ice);
+        }
     }
     
     private void sendMessage(ChatControlMessage message, ChatConnection conn) {
@@ -87,16 +112,16 @@ public class ChatServer extends WebSocketServer {
     @Override
     public void onClose( WebSocket conn, int code, String reason, boolean remote ) {
         System.out.println( conn + " has left the room!" );
+        ChatConnection chatConn = connections.get(conn);
         connections.remove(conn);
-        offers.remove(conn);
+        offers.remove(chatConn);
     }
     
     @Override
     public void onMessage( WebSocket conn, String message ) {
-        System.out.println("Got message " + message);
         try {
             ChatControlMessage control = gson.fromJson(message, ChatControlMessage.class);
-            System.out.println("Got control " + control);
+            System.out.println("Got message " + control.type);
             conn.send(message);
         } catch(JsonSyntaxException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
@@ -119,6 +144,9 @@ public class ChatServer extends WebSocketServer {
             } else if(control.isChatAnswer()) {
                 SDPModel sdp = gson.fromJson(control.payload, SDPModel.class);
                 handleChatAnswer(conn, sdp);
+            } else if(control.isIceCandidate()) {
+                ICECandidateModel ice = gson.fromJson(control.payload, ICECandidateModel.class);
+                handleIceCandidate(conn,ice);
             }
             System.out.println("Got control " + control);
         } catch(JsonSyntaxException ex) {

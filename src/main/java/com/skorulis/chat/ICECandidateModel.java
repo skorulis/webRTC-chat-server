@@ -11,4 +11,8 @@ package com.skorulis.chat;
  */
 public class ICECandidateModel {
     
+    public String sdpMid;
+    public int sdpMLineIndex;
+    public String sdp;
+    
 }

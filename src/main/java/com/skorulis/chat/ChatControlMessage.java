@@ -33,4 +33,8 @@ public class ChatControlMessage {
         return type.equals(CCT_CHAT_ANSWER);
     }
     
+    public boolean isIceCandidate() {
+        return type.equals(CCT_ICE_CANDIDATE);
+    }
+    
 }
