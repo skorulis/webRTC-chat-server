@@ -5,6 +5,7 @@
  */
 package com.skorulis.chat;
 
+
 /**
  *
  * @author alex
@@ -15,12 +16,21 @@ public class ChatControlMessage {
     public static final String CCT_CHAT_INIT = "CCT_CHAT_INIT";
     public static final String CCT_CHAT_OFFER = "CCT_CHAT_OFFER";
     public static final String CCT_CHAT_ANSWER = "CCT_CHAT_ANSWER";
+    public static final String CCT_ICE_CANDIDATE = "CCT_ICE_CANDIDATE";
     
     public String type;
-    public Object payload;
+    public String payload;
     
     public boolean isChatRequest() {
         return type.equals(CCT_CHAT_REQUEST);
+    }
+    
+    public boolean isChatOffer() {
+        return type.equals(CCT_CHAT_OFFER);
+    }
+    
+    public boolean isChatAnswer() {
+        return type.equals(CCT_CHAT_ANSWER);
     }
     
 }

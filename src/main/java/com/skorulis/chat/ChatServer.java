@@ -13,7 +13,6 @@ import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -51,13 +50,27 @@ public class ChatServer extends WebSocketServer {
     
     private void handleChatRequest(ChatConnection conn) {
         ChatConnection other = findOffer();
+        ChatControlMessage message = new ChatControlMessage();
         if(other != null) {
-            
+            System.out.println("Found available connection");
+            message.type = ChatControlMessage.CCT_CHAT_OFFER;
+            message.payload = gson.toJson(other.sdp);
+            other.chattingWith = conn;
+            conn.chattingWith = other;
         } else {
-            ChatControlMessage message = new ChatControlMessage();
             message.type = ChatControlMessage.CCT_CHAT_INIT;
-            sendMessage(message, conn);
+            
         }
+        sendMessage(message, conn);
+    }
+    
+    private void handleChatAnswer(ChatConnection conn, SDPModel answer) {
+        System.out.println("Got chat answer");
+    }
+    
+    private void handleChatOffer(ChatConnection conn, SDPModel offer) {
+        conn.sdp = offer;
+        offers.add(conn);
     }
     
     private void sendMessage(ChatControlMessage message, ChatConnection conn) {
@@ -75,6 +88,7 @@ public class ChatServer extends WebSocketServer {
     public void onClose( WebSocket conn, int code, String reason, boolean remote ) {
         System.out.println( conn + " has left the room!" );
         connections.remove(conn);
+        offers.remove(conn);
     }
     
     @Override
@@ -99,6 +113,12 @@ public class ChatServer extends WebSocketServer {
             ChatConnection conn = connections.get(ws);
             if(control.isChatRequest()) {
                 handleChatRequest(conn);
+            } else if(control.isChatOffer()) {
+                SDPModel sdp = gson.fromJson(control.payload, SDPModel.class);
+                handleChatOffer(conn, sdp);
+            } else if(control.isChatAnswer()) {
+                SDPModel sdp = gson.fromJson(control.payload, SDPModel.class);
+                handleChatAnswer(conn, sdp);
             }
             System.out.println("Got control " + control);
         } catch(JsonSyntaxException ex) {

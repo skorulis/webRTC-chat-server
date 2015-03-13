@@ -14,6 +14,8 @@ import org.java_websocket.WebSocket;
 public class ChatConnection {
     
     public final WebSocket socket;
+    public SDPModel sdp;
+    public ChatConnection chattingWith;
     
     public ChatConnection(WebSocket socket) {
         this.socket = socket;
