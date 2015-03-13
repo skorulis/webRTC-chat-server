@@ -48,10 +48,6 @@ public class ChatServer extends WebSocketServer {
         return null;
     }
     
-    private void handleICECandidate(ChatConnection conn) {
-        
-    }
-    
     private void handleChatRequest(ChatConnection conn) {
         ChatConnection other = findOffer();
         ChatControlMessage message = new ChatControlMessage();
@@ -119,20 +115,13 @@ public class ChatServer extends WebSocketServer {
     
     @Override
     public void onMessage( WebSocket conn, String message ) {
-        try {
-            ChatControlMessage control = gson.fromJson(message, ChatControlMessage.class);
-            System.out.println("Got message " + control.type);
-            conn.send(message);
-        } catch(JsonSyntaxException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        //Using binary messages
     }
     
     @Override
     public void onMessage(WebSocket ws, ByteBuffer bb) {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(bb.array());
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-        System.out.println("Got message " + bb);
         try {
             ChatControlMessage control = gson.fromJson(reader, ChatControlMessage.class);
             ChatConnection conn = connections.get(ws);
@@ -148,7 +137,7 @@ public class ChatServer extends WebSocketServer {
                 ICECandidateModel ice = gson.fromJson(control.payload, ICECandidateModel.class);
                 handleIceCandidate(conn,ice);
             }
-            System.out.println("Got control " + control);
+            System.out.println("Got control " + control.type);
         } catch(JsonSyntaxException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
         }
