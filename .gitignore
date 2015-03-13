@@ -3,4 +3,3 @@
 build
 .nb-gradle
 .gradle
-gradle/wrapper
